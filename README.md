@@ -49,8 +49,7 @@ pip install scholarly
 After setting up the environment and installing the dependencies, you can run the script:
 
 ```bash
-
-    python scraper.py
+python3 scraper.py
 ```
 
 Make sure to provide a text file (authors.txt) containing the list of author names to search. Each author should be on a separate line.
@@ -62,17 +61,12 @@ Prepare the Input File: Create a text file named authors.txt and list the author
 Example:
 
 ```txt
-
 John Doe
 Jane Smith
 Alice Johnson
 ```
 
-Run the Script: Simply run the Python script, and it will search Google Scholar for each author, filter their publications, and save the results to a file called author_publications.txt in the current directory.
-
-```bash
-    python scraper.py
-```
+Simply run the Python script, and it will search Google Scholar for each author, filter their publications, and save the results to a file called author_publications.txt in the current directory.
 
 Once the script finishes running, check the author_publications.txt file for the results. You will see detailed statistics for each author as well as global journal publication counts.
 
