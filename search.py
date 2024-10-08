@@ -52,6 +52,8 @@ def search_publications(authors):
     total_citations = 0  # Initialize total citations count
     total_recent_citations = 0
     global_journal_counts = {}  # Dictionary to store overall journal counts
+    global_collaborative_papers = 0
+    global_collaborative_count = {}  # Dictionary to store institution counts globally
 
     for author in authors:
         print(f"Searching for {author}...")
@@ -62,7 +64,7 @@ def search_publications(authors):
 
             if author_profile:
                 # Fill in author details
-                author_profile = scholarly.fill(author_profile)
+                author_profile = scholarly.fill(author_profile, sections=['basics', 'indices', 'coauthors', 'publications'])
                 print(f"Found {author}: {author_profile.get('name')}")
 
                 # Get all publications
@@ -79,6 +81,17 @@ def search_publications(authors):
                 # Citations in the last 5 years (if available)
                 citations_last_5_years = author_profile.get('citedby5y', 0)
 
+                # Track collaborations
+                author_affiliations_count = {}  # Dictionary to track institution counts for this author
+                for coauthor in author_profile.get('coauthors', []):
+                    if 'affiliation' in coauthor and coauthor['affiliation']:
+                        affiliation = coauthor['affiliation']
+                        # Update the count for this author
+                        author_affiliations_count[affiliation] = author_affiliations_count.get(affiliation, 0) + 1
+                        # Update the global count for the affiliation
+                        global_collaborative_count[affiliation] = global_collaborative_count.get(affiliation, 0) + 1
+                        global_collaborative_papers += 1  # Increment global collaborative papers
+
                 # Store author data
                 citations = author_profile.get('citedby', 0)
                 author_data[author] = {
@@ -86,7 +99,8 @@ def search_publications(authors):
                     "citations": citations,
                     "citations_last_5_years": citations_last_5_years,
                     "top_paper": top_paper['bib']['title'] if top_paper else "N/A",
-                    "journal_counts": author_journal_counts
+                    "journal_counts": author_journal_counts,
+                    "affiliations": author_affiliations_count  # Store the count of affiliations for this author
                 }
 
                 # Update total citation counts
@@ -99,7 +113,8 @@ def search_publications(authors):
                     "citations": 0,
                     "citations_last_5_years": 0,
                     "top_paper": "N/A",
-                    "journal_counts": {}
+                    "journal_counts": {},
+                    "affiliations": {}
                 }
 
         except Exception as e:
@@ -109,42 +124,71 @@ def search_publications(authors):
                 "citations": 0,
                 "citations_last_5_years": 0,
                 "top_paper": "N/A",
-                "journal_counts": {}
+                "journal_counts": {},
+                "affiliations": {}
             }
 
-    return author_data, total_citations, total_recent_citations, global_journal_counts
+    return author_data, total_citations, total_recent_citations, global_journal_counts, global_collaborative_papers, global_collaborative_count
 
-def save_to_file(author_data, total_citations, total_recent_citations, global_journal_counts, output_file):
+def save_to_file(author_data, total_citations, total_recent_citations, global_journal_counts, global_collaborative_papers, global_collaborative_count, output_file):
+    # Sort authors by their total citations in descending order
+    sorted_authors = sorted(author_data.items(), key=lambda x: x[1]['citations'], reverse=True)
+
+    # Sort global journal counts by the number of publications in descending order
+    sorted_global_journal_counts = sorted(global_journal_counts.items(), key=lambda x: x[1], reverse=True)
+
+    # Sort global collaborations by the number of collaborations in descending order
+    sorted_global_collaborative_count = sorted(global_collaborative_count.items(), key=lambda x: x[1], reverse=True)
+
     with open(output_file, 'w') as f:
-        for author, data in author_data.items():
+        for author, data in sorted_authors:
             f.write(f"{author} (Total Citations: {data['citations']}, Citations Last 5 Years: {data['citations_last_5_years']}):\n")
             f.write(f"Top Paper: {data['top_paper']}\n")
             f.write(f"Journals Published In: {len(data['journal_counts'])}\n")
             f.write("Journals and their counts:\n")
-            for journal, count in data['journal_counts'].items():
+            
+            # Sort author-specific journals by their publication counts
+            sorted_journals = sorted(data['journal_counts'].items(), key=lambda x: x[1], reverse=True)
+            for journal, count in sorted_journals:
                 f.write(f"  - {journal}: {count} publication(s)\n")
+            
             f.write("Publications (Last 5 Years):\n")
             for pub in data['publications']:
                 f.write(f"  - {pub['bib']['title']} ({pub['bib'].get('pub_year')})\n")
+            
+            # Sort and write the affiliations (collaborating institutions)
+            sorted_affiliations = sorted(data['affiliations'], key=lambda x: x)
+            f.write(f"Unique Affiliations: {len(data['affiliations'])}\n")
+            for affiliation in sorted_affiliations:
+                f.write(f"  - {affiliation}\n")
             f.write("\n")
 
         # Write total citations and overall journal counts
         f.write(f"Total Citations for all authors: {total_citations}\n")
         f.write(f"Total Citations in the Last 5 Years for all authors: {total_recent_citations}\n")
         f.write(f"Total Unique Journals: {len(global_journal_counts)}\n")
-        f.write("Overall Journal Counts:\n")
-        for journal, count in global_journal_counts.items():
+        f.write("Overall Journal Counts (Sorted by publication count):\n")
+        for journal, count in sorted_global_journal_counts:
             f.write(f"  - {journal}: {count} publication(s)\n")
+
+        f.write(f"Total Collaborative Papers: {global_collaborative_papers}\n")
+        f.write(f"Overall Collaborating Institutions (Sorted by collaboration count):\n")
+        for affiliation, count in sorted_global_collaborative_count:
+            f.write(f"  - {affiliation}: {count} collaboration(s)\n")
 
 if __name__ == "__main__":
     input_file = "authors.txt"
-    output_file = "author_publications.txt"
+    output_file = "results.txt"
     
     authors = read_authors(input_file)
-    author_publications, total_citations, total_recent_citations, global_journal_counts = search_publications(authors)
-    save_to_file(author_publications, total_citations, total_recent_citations, global_journal_counts, output_file)
+    author_publications, total_citations, total_recent_citations, global_journal_counts, global_collaborative_papers, global_collaborative_count = search_publications(authors)
+    
+    save_to_file(author_publications, total_citations, total_recent_citations, global_journal_counts, global_collaborative_papers, global_collaborative_count, output_file)
     
     print(f"Saved publication data to {output_file}")
     print(f"Total Citations for all authors: {total_citations}")
     print(f"Total Citations in the Last 5 Years for all authors: {total_recent_citations}")
     print(f"Total Unique Journals: {len(global_journal_counts)}")
+    print(f"Total Collaborative Papers: {global_collaborative_papers}")
+    print(f"Total Unique Collaborating Institutions: {len(global_collaborative_count)}")
+

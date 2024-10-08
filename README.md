@@ -66,9 +66,7 @@ Jane Smith
 Alice Johnson
 ```
 
-Simply run the Python script, and it will search Google Scholar for each author, filter their publications, and save the results to a file called author_publications.txt in the current directory.
-
-Once the script finishes running, check the author_publications.txt file for the results. You will see detailed statistics for each author as well as global journal publication counts.
+Simply run the Python script, and it will search Google Scholar for each author, filter their publications, and save the results to a file called results.txt in the current directory.
 
 The output will look something like this:
 
