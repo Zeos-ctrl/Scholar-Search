@@ -1,0 +1,17 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: Scholar-Search
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Connor Bryan
+    email: connor.bryan@zeos.systems
+repository-code: 'https://github.com/Zeos-ctrl/Scholar-Search'
+abstract: >-
+  This project is a Python-based web scraper that automates
+  the retrieval of academic publication data from Google
+  Scholar.
